@@ -35,7 +35,7 @@ def escape(name, include_C_name=False):
     return name
 
 
-def parse_enum_value(node):
+def parse_enum_value(node, visitor):
     if isinstance(node, c_ast.Constant):
         if node.type in ("int", "long int"):
             c_raw = node.value
@@ -63,7 +63,7 @@ def parse_enum_value(node):
             assert False, f"Unsuported constant type for enum value: {node}"
 
     elif isinstance(node, c_ast.BinaryOp):
-        value_as_str = f"{node.left.name} {node.op} {node.right.name}"
+        value_as_str = f"{visitor(node.left)} {node.op} {visitor(node.right)}"
         value_as_int = None
 
     else:
@@ -148,7 +148,7 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
             for item in node.values.enumerators:
                 items.append(escape(item.name, True))
                 if item.value:
-                    value_as_str, maybe_value_as_int = parse_enum_value(item.value)
+                    value_as_str, maybe_value_as_int = parse_enum_value(item.value, self.visit)
                     index_since_last_str_value = 0
                     maybe_last_value_as_str = value_as_str
                     maybe_last_value_as_int = maybe_value_as_int
